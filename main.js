@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function () {
     es: {
       "nav.home": "Inicio", "nav.features": "Funciones", "nav.how": "Cómo funciona", "nav.faq": "FAQ",
       "nav.login": "Iniciar sesión", "nav.getapp": "Descargar app", "btn.getapp": "Descargar la app",
-      "hero.title": "Tu auto y tu ruta,<br>en una sola <span class='wp-h1-accent'>app</span>",
+      "hero.title": "Tu auto y tu ruta,<br>en una sola <span class='wp-h1-accent'>aplicación</span>",
       "hero.sub": "Alquila autos entre particulares y comparte rutas con carpooling verificado, con más ingresos para los dueños, menos costos para los conductores y todo desde tu celular.",
       "store.appstore.sub": "Descárgala en", "store.play.sub": "Disponible en",
       "hero.trust1": "Identidad verificada", "hero.trust2": "Pagos protegidos en escrow",
@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function () {
       "faq.q3": "¿Puedo filtrar el carpooling solo para mujeres?", "faq.a3": "Sí, en la sección de seguridad puedes activar el filtro «Solo mujeres», que limita tus viajes a conductoras y pasajeras verificadas, y también puedes filtrar por institución educativa.",
       "faq.q4": "¿Qué métodos de pago aceptan?", "faq.a4": "Aceptamos Yape, Plin, Visa, Mastercard y transferencia bancaria, y todos los pagos quedan retenidos en escrow hasta confirmar el fin del servicio.",
       "cta.title": "Descarga WheelsPe<br><span class='wp-cta-accent'>Gratis</span>", "cta.sub": "Crea tu cuenta en 2 minutos, verifica tu identidad y únete a la comunidad de movilidad colaborativa del Perú.",
-      "footer.features": "Funciones", "footer.how": "Cómo funciona", "footer.faq": "FAQ", "footer.privacy": "Privacidad", "footer.copy": "© 2025 WheelsPe · Lima, Perú", "footer.proj": "Proyecto MOVEO · UPC"
+      "footer.home": "Inicio", "footer.features": "Funciones", "footer.how": "Cómo funciona", "footer.faq": "FAQ", "footer.copy": "© 2025 WheelsPe · Lima, Perú", "footer.proj": "Proyecto MOVEO · UPC"
     },
     en: {
       "nav.home": "Home", "nav.features": "Features", "nav.how": "How it works", "nav.faq": "FAQ",
@@ -80,11 +80,10 @@ document.addEventListener('DOMContentLoaded', function () {
       "faq.q3": "Can I filter carpooling for women only?", "faq.a3": "Yes, in the safety section you can turn on the “Women only” filter, which limits your trips to verified female drivers and passengers, and you can also filter by school.",
       "faq.q4": "What payment methods do you accept?", "faq.a4": "We accept Yape, Plin, Visa, Mastercard and bank transfer, and every payment stays in escrow until the service is confirmed complete.",
       "cta.title": "Download WheelsPe<br><span class='wp-cta-accent'>Free</span>", "cta.sub": "Create your account in 2 minutes, verify your identity and join Peru's shared mobility community.",
-      "footer.features": "Features", "footer.how": "How it works", "footer.faq": "FAQ", "footer.privacy": "Privacy", "footer.copy": "© 2025 WheelsPe · Lima, Peru", "footer.proj": "MOVEO Project · UPC"
+      "footer.home": "Home", "footer.features": "Features", "footer.how": "How it works", "footer.faq": "FAQ", "footer.copy": "© 2025 WheelsPe · Lima, Peru", "footer.proj": "MOVEO Project · UPC"
     }
   };
-  let curLang = 'en';
-  try { curLang = localStorage.getItem('wp-lang') || 'en'; } catch (e) {}
+  let curLang = 'en'; // the page always loads in English by default
   let verifStep = 1; // current step shown in the verification mockup (1..4), driven by the wheel
   const renderStep = () => {
     const el = $('.wp-verif-step');
@@ -96,7 +95,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!I18N[l]) l = 'en';
     curLang = l;
     document.documentElement.lang = l;
-    try { localStorage.setItem('wp-lang', l); } catch (e) {}
     const dict = I18N[l];
     $$('[data-i18n]').forEach(el => { const v = dict[el.dataset.i18n]; if (v != null) el.textContent = v; });
     $$('[data-i18n-html]').forEach(el => { const v = dict[el.dataset.i18nHtml]; if (v != null) el.innerHTML = v; });
@@ -136,22 +134,42 @@ document.addEventListener('DOMContentLoaded', function () {
   const menu = $('.wp-mobile');
   const dots = $('.wp-dots');
   if (menu) {
-    // the dots button morphs into an X while the menu is open (replaces the duplicate logo header)
+    // the dots button shows: hamburger when idle, the 3 dots while scrolling,
+    // and an X while the menu is open (replaces the duplicate logo header)
+    const burgerIco = dots && dots.querySelector('.wp-burger-ico');
     const dotsIco = dots && dots.querySelector('.wp-dots-ico');
     const xIco = dots && dots.querySelector('.wp-x-ico');
-    const setIcon = isOpen => {
-      if (dotsIco) dotsIco.style.display = isOpen ? 'none' : 'flex';
+    let scrolling = false;
+    const onMobile = () => window.matchMedia('(max-width:920px)').matches;
+    const setIcon = () => {
+      const isOpen = !!menu.dataset.open;
+      // burger/dots swap only on mobile; on desktop the mini pill keeps the 3 dots
+      const showBurger = !isOpen && onMobile() && !scrolling;
       if (xIco) xIco.style.display = isOpen ? 'block' : 'none';
+      if (burgerIco) burgerIco.style.display = showBurger ? 'block' : 'none';
+      if (dotsIco) dotsIco.style.display = (!isOpen && !showBurger) ? 'flex' : 'none';
       if (dots) dots.setAttribute('aria-label', isOpen ? 'Cerrar menú' : 'Abrir menú');
+      // on mobile, shrink the pill to the compact size while scrolling (like desktop)
+      document.body.classList.toggle('wp-mscroll', onMobile() && !isOpen && scrolling);
     };
-    const open = () => { menu.style.opacity = '1'; menu.style.pointerEvents = 'all'; menu.style.transform = 'translateX(-50%) translateY(0)'; menu.dataset.open = '1'; setIcon(true); };
-    const close = () => { menu.style.opacity = '0'; menu.style.pointerEvents = 'none'; menu.style.transform = 'translateX(-50%) translateY(-10px)'; menu.dataset.open = ''; setIcon(false); };
+    setIcon();
+    // while the page is scrolling, swap to the 3 dots; revert to the burger once it pauses
+    let scrollTimer = null;
+    window.addEventListener('scroll', () => {
+      if (!onMobile()) return; // desktop scroll behaviour is untouched
+      if (!scrolling) { scrolling = true; setIcon(); }
+      if (scrollTimer) clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(() => { scrolling = false; setIcon(); }, 220);
+    }, { passive: true });
+    window.addEventListener('resize', setIcon);
+    const open = () => { menu.style.opacity = '1'; menu.style.pointerEvents = 'all'; menu.style.transform = 'translateX(-50%) translateY(0)'; menu.dataset.open = '1'; setIcon(); };
+    const close = () => { menu.style.opacity = '0'; menu.style.pointerEvents = 'none'; menu.style.transform = 'translateX(-50%) translateY(-10px)'; menu.dataset.open = ''; setIcon(); };
     const toggle = () => { menu.dataset.open ? close() : open(); };
     $$('a', menu).forEach(a => a.addEventListener('click', close));
-    // cerrar al tocar fuera de la tarjeta (sin contar el botón de 3 puntos)
+    // cerrar al tocar fuera de la tarjeta (la barra entera maneja su propio clic)
     document.addEventListener('click', e => {
       if (!menu.dataset.open) return;
-      if (menu.contains(e.target) || (dots && dots.contains(e.target))) return;
+      if (menu.contains(e.target) || (e.target.closest && e.target.closest('.wp-nav'))) return;
       close();
     });
     window.wpOpenMenu = open;
@@ -335,9 +353,15 @@ document.addEventListener('DOMContentLoaded', function () {
     menu.addEventListener('mouseenter', () => { if (canHover && isMobile()) cancelMenuClose(); });
     menu.addEventListener('mouseleave', () => { if (canHover && isMobile()) scheduleMenuClose(); });
   }
-  if (dots) dots.addEventListener('click', () => {
-    if (isMobile()) { cancelMenuClose(); if (window.wpToggleMenu) window.wpToggleMenu(); }
-    else { hovering = true; renderNav(); }
+  // on mobile, tapping anywhere on the bar opens/closes the menu — except the
+  // logo, which always takes you to the hero. (desktop: only the logo navigates.)
+  nav.addEventListener('click', e => {
+    if (e.target.closest('.wp-logo')) { if (isMobile() && window.wpCloseMenu) window.wpCloseMenu(); return; }
+    if (isMobile()) {
+      e.stopPropagation(); // don't let the outside-click handler immediately re-close
+      cancelMenuClose();
+      if (window.wpToggleMenu) window.wpToggleMenu();
+    } else { hovering = true; renderNav(); }
   });
   const sentinel = document.getElementById('wp-top-sentinel');
   if (sentinel) {
